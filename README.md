@@ -231,3 +231,8 @@ Screenshots of the HMI are available in:
 - [HMI Screenshots](docs/hmi-screenshots.md)
 
 
+## Release
+See the latest stable release here:
+https://github.com/boembchen2000/liontron-ble-modbus-gateway/releases
+
+
