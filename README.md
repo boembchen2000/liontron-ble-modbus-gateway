@@ -172,7 +172,7 @@ This project prioritizes stability over speed and is designed for
 
 ## Documentation
 
-This project is documented in detail in the following files:
+This project is documented in detail in the following files: 
 
 - 📘 [System Architecture](docs/architecture.md)
 - ⚠️ [BLE Pitfalls & Liontron Quirks](docs/ble-pitfalls.md)
