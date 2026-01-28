@@ -175,6 +175,6 @@ This project prioritizes stability over speed and is designed for
 This project is documented in detail in the following files:
 
 - 📘 [System Architecture](docs/architecture.md)
-- ⚠️ [BLE Pitfalls & Liontron Quirks](docs/ble-pitfalls.md)
+- ⚠️ [BLE Pitfalls & Liontron Quirks](docs/ble-pitfalls-liontron.md)
 - 📟 [Modbus Register Map](docs/modbus-registers.md)
 
