@@ -220,5 +220,6 @@ This project is documented in detail in the following files:
 - 📘 [System Architecture](docs/architecture.md)
 - ⚠️ [BLE Pitfalls & Liontron Quirks](docs/ble-pitfalls-liontron.md)
 - 📟 [Modbus Register Map](docs/modbus-registers.md)
+- 🛣️ [Project Roadmap](docs/roadmap.md)
 
 
