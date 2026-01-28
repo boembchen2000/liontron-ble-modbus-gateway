@@ -170,4 +170,12 @@ Shift safety and logic decisions to the Modbus layer
 This project prioritizes stability over speed and is designed for
 24/7 operation in a motorhome environment.
 
+## Documentation
+
+This project is documented in detail in the following files:
+
+- 📘 [System Architecture](docs/architecture.md)
+- ⚠️ [BLE Pitfalls & Liontron Quirks](docs/ble-pitfalls.md)
+- 📟 [Modbus Register Map](docs/modbus-registers.md)
+
 
