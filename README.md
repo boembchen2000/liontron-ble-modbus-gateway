@@ -170,14 +170,6 @@ Shift safety and logic decisions to the Modbus layer
 This project prioritizes stability over speed and is designed for
 24/7 operation in a motorhome environment.
 
-## Documentation
-
-This project is documented in detail in the following files:
-
-- 📘 [System Architecture](docs/architecture.md)
-- ⚠️ [BLE Pitfalls & Liontron Quirks](docs/ble-pitfalls-liontron.md)
-- 📟 [Modbus Register Map](docs/modbus-registers.md)
-
 ## Project Scope & Design Goals
 
 This project focuses on **reliability and long-term stability** in real-world
@@ -219,4 +211,14 @@ This project works around that limitation by:
 - moving all logic and validation to the Raspberry Pi
 
 This approach has proven stable in daily use.
+
+
+## Documentation
+
+This project is documented in detail in the following files:
+
+- 📘 [System Architecture](docs/architecture.md)
+- ⚠️ [BLE Pitfalls & Liontron Quirks](docs/ble-pitfalls-liontron.md)
+- 📟 [Modbus Register Map](docs/modbus-registers.md)
+
 
