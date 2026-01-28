@@ -178,3 +178,45 @@ This project is documented in detail in the following files:
 - ⚠️ [BLE Pitfalls & Liontron Quirks](docs/ble-pitfalls-liontron.md)
 - 📟 [Modbus Register Map](docs/modbus-registers.md)
 
+## Project Scope & Design Goals
+
+This project focuses on **reliability and long-term stability** in real-world
+camper / motorhome environments.
+
+It is **not** a demo, proof-of-concept, or minimal hardware experiment.
+
+### Design goals
+
+- Stable 24/7 operation
+- Clear separation of responsibilities
+- Deterministic Modbus behavior for HMIs
+- Easy debugging and extendability
+- No hidden logic inside the HMI
+
+## What This Project Is
+
+- A **production-grade BLE-to-Modbus gateway**
+- Designed for **Liontron batteries with JBD BMS**
+- Optimized for **industrial HMIs** (e.g. Mochuan)
+- Built from real-world failures and lessons learned
+
+## What This Project Is NOT
+
+- ❌ Not an ESP32-only solution
+- ❌ Not intended to replace the Liontron app
+- ❌ Not a generic BLE framework
+- ❌ Not optimized for minimum code size or elegance
+
+Reliability beats minimal hardware.
+
+## Stability Note
+
+Bluetooth Low Energy was never designed for continuous industrial data transport.
+
+This project works around that limitation by:
+- isolating BLE handling on the ESP32
+- using stateless JSON transport
+- moving all logic and validation to the Raspberry Pi
+
+This approach has proven stable in daily use.
+
