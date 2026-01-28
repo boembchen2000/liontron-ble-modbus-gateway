@@ -222,4 +222,12 @@ This project is documented in detail in the following files:
 - 📟 [Modbus Register Map](docs/modbus-registers.md)
 - 🛣️ [Project Roadmap](docs/roadmap.md)
 
+## Real-World Operation
+
+This system is actively used in a motorhome environment
+and has been running reliably over extended periods.
+
+Screenshots of the HMI are available in:
+- [HMI Screenshots](docs/hmi-screenshots.md)
+
 
