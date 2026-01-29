@@ -183,6 +183,82 @@ It was shaped by:
 If your BLE solution “works most of the time” —  
 it is already broken.
 
----
+Why battery temperature was intentionally omitted
+
+During development, battery temperature values were investigated in detail.
+According to JBD protocol documentation, temperature sensors are typically encoded
+as Kelvin ×10, located at higher byte offsets in the Basic Info (0x03) response:
+
+Temperature = (raw_value - 2731) / 10
+
+
+In theory, Liontron batteries with JBD-compatible BMS should expose one or more
+temperature sensors using this format.
+
+What was observed in practice
+
+When querying Liontron batteries via BLE, the following issues were consistently observed:
+
+The 0x03 Basic Info response often ends before the documented temperature offsets
+
+Bytes containing temperature data are frequently missing or zero-filled
+
+Different Liontron firmware versions return different frame lengths
+
+Temperature fields are not reliably populated, even while the battery is in use
+
+The Liontron mobile app may show temperatures that are not exposed via BLE
+
+As a result, reading battery temperature via BLE produced values such as:
+
+Constant 0 °C
+
+Invalid negative temperatures
+
+Unchanging values regardless of load or environment
+
+Why this is a problem
+
+Battery temperature is a safety-relevant parameter.
+Displaying unreliable or guessed temperature values is worse than displaying none at all:
+
+False alarms may trigger unnecessary user actions
+
+Missing alarms may hide real thermal problems
+
+Inconsistent values reduce trust in the system
+
+For a motorhome / camper environment, this risk is unacceptable.
+
+Design decision
+
+Battery temperature was therefore intentionally omitted from:
+
+ESP32 JSON output
+
+Modbus registers
+
+HMI visualization
+
+This was a conscious design decision, not a technical limitation.
+
+What is used instead
+
+Cell voltage delta is used as an early indicator for imbalance and stress
+
+BMS protection and warning bits are monitored directly
+
+Raspberry Pi CPU temperature is monitored to protect the gateway hardware
+
+The system relies on the internal BMS protections for thermal safety
+
+Conclusion
+
+Although the JBD protocol technically supports temperature reporting,
+Liontron batteries do not expose this information reliably via BLE.
+
+For long-term stability and safety, battery temperature was excluded by design.
+
+Reliability and correctness were prioritized over completeness.
 
 _End of document_
