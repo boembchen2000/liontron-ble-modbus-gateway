@@ -1,58 +1,75 @@
-Architecture Overview
+# System Architecture
 
-This project is intentionally split into multiple layers.
+## Architecture Overview
+
+This project is intentionally split into multiple layers.  
 Each layer has a single responsibility to maximize stability, reliability, and debuggability.
 
-1. Battery Layer – Liontron LiFePO₄ (JBD BMS)
+The system separates:
 
-Liontron batteries expose their BMS via Bluetooth Low Energy (BLE)
+- BLE communication
+- data transport
+- system logic
+- industrial protocol handling
+- visualization
 
-Uses a proprietary but JBD-compatible protocol
+---
 
-Designed for mobile apps, not for industrial or continuous communication
+# 1. Battery Layer – Liontron LiFePO₄ (JBD BMS)
 
-BLE behavior is timing-sensitive and sometimes unreliable
+Liontron batteries expose their BMS via Bluetooth Low Energy (BLE).
 
-Key limitation:
+Characteristics:
+
+- Proprietary but JBD-compatible protocol
+- Designed for mobile apps, not industrial communication
+- BLE behavior is timing-sensitive and sometimes unreliable
+
+### Key limitation
+
 BLE connections may silently stall or stop sending notifications without disconnecting.
 
-2. ESP32 Layer – BLE Client & JBD Protocol Handler
+Because of this, BLE must be treated as an unreliable transport layer.
 
-Role:
+---
+
+# 2. ESP32 Layer – BLE Client & JBD Protocol Handler
+
+Role:  
 Reliable BLE client and low-level JBD protocol handler.
 
-Responsibilities
+### Responsibilities
 
-Scan and identify batteries by BLE name
+- Scan and identify batteries by BLE name
+- Maintain two independent BLE connections
+- Send JBD commands:
 
-Maintain two independent BLE connections
-
-Send JBD commands:
-
-0x03 – Basic information
-
+0x03 – Basic information  
 0x04 – Cell voltages
 
-Alternate commands with fixed timing
+- Alternate commands with fixed timing
+- Parse raw BMS frames
+- Output clean structured JSON via serial
 
-Parse raw BMS frames
+### Why the ESP32 is limited to this role
 
-Output clean, structured JSON via serial
+BLE requires tight timing control.
 
-Why the ESP32 is limited to this role
+Running Modbus RTU at the same time causes problems:
 
-BLE requires tight timing control
+- Modbus timing conflicts with BLE scheduling
+- Debugging BLE + Modbus on a single MCU becomes difficult
+- Watchdog resets become hard to diagnose
 
-Modbus RTU timing conflicts with BLE scheduling
+### Design decision
 
-Debugging BLE + Modbus on a single MCU is impractical
+The ESP32 performs only BLE communication and data extraction.
 
-Watchdog resets become hard to diagnose
+Nothing else.
 
-Design decision:
-The ESP32 does only BLE communication and data extraction — nothing else.
+---
 
-3. Serial Transport Layer – JSON Stream
+# 3. Serial Transport Layer – JSON Stream
 
 The ESP32 outputs battery data as line-based JSON:
 
@@ -61,123 +78,132 @@ The ESP32 outputs battery data as line-based JSON:
   "bat2": { ... }
 }
 
-Why JSON?
+### Why JSON?
 
-Human-readable
-
-Easy to debug via serial monitor
-
-Robust against partial data loss
-
-Easy to extend without breaking compatibility
+- Human-readable
+- Easy debugging via serial monitor
+- Robust against partial data loss
+- Easy to extend without breaking compatibility
 
 This interface is intentionally stateless.
 
-4. Raspberry Pi Layer – Logic & Modbus Gateway
+---
 
-Role:
+# 4. Raspberry Pi Layer – Logic & Modbus Gateway
+
+Role:  
 System brain and industrial protocol bridge.
 
-Responsibilities
+### Responsibilities
 
-Read JSON stream from ESP32
+- Read JSON stream from ESP32
+- Validate incoming data
+- Timestamp received values
+- Detect timeouts and offline states
 
-Validate and timestamp incoming data
+Calculate system values:
 
-Detect timeouts and offline states
+- State of Charge (SOC)
+- Cell voltage delta
+- Status bitfields
+- Overall battery state
 
-Calculate:
+Expose all values via Modbus RTU registers.
 
-State of Charge (SOC)
+The Raspberry Pi acts as a stable Modbus slave device.
 
-Cell voltage delta
+### Why Raspberry Pi?
 
-Status bitfields
+- Stable Linux serial handling
+- Robust error recovery
+- Excellent logging and debugging
+- Clean Python implementation
+- Easy future extensions
 
-Overall battery state
+Possible extensions:
 
-Expose all data via Modbus RTU registers
+- MQTT
+- data logging
+- Home Assistant integration
+- remote diagnostics
 
-Act as a long-term stable Modbus slave
+---
 
-Why Raspberry Pi?
+# 5. Modbus RTU Layer
 
-Stable Linux serial handling
+Communication between the gateway and the HMI uses:
 
-Robust error recovery
+Modbus RTU over RS485
 
-Excellent logging and debugging
+Advantages:
 
-Clean Python implementation
+- Industrial standard protocol
+- Deterministic timing
+- Very robust
+- Supports long cable runs
+- Compatible with many HMI systems
 
-Easy future extensions (MQTT, logging, Home Assistant, etc.)
+### Register Philosophy
 
-5. Modbus RTU Layer
+The Modbus design follows a simple philosophy:
 
-Standard Modbus RTU over RS485
+- Simple numeric registers
+- One status bitfield per battery
+- One overall state register per battery
+- Preprocessed values only
 
-Compatible with industrial HMIs
+The HMI should not perform complex calculations.
 
-Deterministic timing
+---
 
-Supports long cable runs
+# 6. HMI Layer
 
-Register Philosophy
-
-Simple numeric registers
-
-One status bitfield per battery
-
-One overall state register per battery
-
-HMI logic kept minimal
-
-6. HMI Layer
-
-Role:
+Role:  
 Visualization only.
 
-Design Rules
+### Design Rules
 
-No complex logic
+- No complex logic
+- No calculations
+- Only comparisons and bit checks
+- Clear text-based alarms
 
-No calculations
+The HMI fully trusts the Raspberry Pi  
+to provide already processed data.
 
-Only comparisons and bit checks
+---
 
-Clear, text-based alarms
+# Why This Architecture Works
 
-The HMI fully trusts the Raspberry Pi to provide already-processed data.
+Problem → Solution
 
-Why This Architecture Works
-Problem	Solution
-Unstable BLE	Isolated to ESP32
-BLE reconnect complexity	No Modbus on ESP32
-Timing conflicts	Split responsibilities
-Debugging difficulty	JSON inspection
-HMI limitations	Preprocessed registers
-Why an ESP32-Only Design Was Rejected
+Unstable BLE → Isolated to ESP32  
+BLE reconnect complexity → No Modbus on ESP32  
+Timing conflicts → Split responsibilities  
+Debugging difficulty → JSON inspection  
+HMI limitations → Preprocessed Modbus registers
+
+---
+
+# Why an ESP32-Only Design Was Rejected
 
 Although technically possible, an ESP32-only approach was rejected because:
 
-BLE and Modbus timing interfere
-
-Error handling becomes fragile
-
-Debugging turns into guesswork
-
-Long-term stability suffers
+- BLE and Modbus timing interfere
+- Error handling becomes fragile
+- Debugging turns into guesswork
+- Long-term stability suffers
 
 Reliability beats minimal hardware.
 
-Conclusion
+---
+
+# Conclusion
 
 This architecture prioritizes:
 
-Stability over elegance
-
-Simplicity over cleverness
-
-Explicit state over implicit assumptions
+- Stability over elegance
+- Simplicity over cleverness
+- Explicit state over implicit assumptions
 
 It was shaped by real-world failures, not theory.
