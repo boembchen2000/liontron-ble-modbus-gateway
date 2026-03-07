@@ -9,7 +9,7 @@ environment and are **not obvious from datasheets or libraries**.
 
 ---
 
-## 1. BLE Is Not a Continuous Data Stream
+# 1. BLE Is Not a Continuous Data Stream
 
 Liontron batteries expose their BMS via BLE primarily for **mobile apps**.
 
@@ -31,11 +31,11 @@ This implies:
 
 ---
 
-## 2. Notifications Can Stall Without Disconnect
+# 2. Notifications Can Stall Without Disconnect
 
 A critical pitfall:
 
-> The ESP32 can remain connected, but receive **no more notifications**.
+The ESP32 can remain connected, but receive **no more notifications**.
 
 This happens especially when:
 
@@ -54,7 +54,7 @@ There is no BLE error and no disconnect callback.
 
 ---
 
-## 3. BLE Timing Is Extremely Sensitive
+# 3. BLE Timing Is Extremely Sensitive
 
 Liontron / JBD BMS expects:
 
@@ -78,11 +78,11 @@ Common mistakes:
 
 ---
 
-## 4. ESP32 + Modbus Is a Trap
+# 4. ESP32 + Modbus Is a Trap
 
 Many attempts try to:
 
-> “Just do everything on the ESP32”
+“Just do everything on the ESP32”
 
 This usually fails because:
 
@@ -102,7 +102,7 @@ This usually fails because:
 
 ---
 
-## 5. Dual Battery BLE Is Not Trivial
+# 5. Dual Battery BLE Is Not Trivial
 
 Handling two batteries over BLE introduces additional pitfalls:
 
@@ -119,7 +119,7 @@ Handling two batteries over BLE introduces additional pitfalls:
 
 ---
 
-## 6. Why JSON over Serial Works
+# 6. Why JSON over Serial Works
 
 Instead of pushing Modbus directly:
 
@@ -138,7 +138,7 @@ This separation is the **key stability factor** of the system.
 
 ---
 
-## 7. Timeout Detection Is Mandatory
+# 7. Timeout Detection Is Mandatory
 
 Never trust BLE connection state alone.
 
@@ -152,7 +152,7 @@ This project uses:
 
 ---
 
-## 8. Lessons Learned
+# 8. Lessons Learned
 
 **What does NOT work reliably:**
 
@@ -170,11 +170,12 @@ This project uses:
 
 ---
 
-## Final Note
+# Final Note
 
 This architecture was not designed on paper.
 
 It was shaped by:
+
 - Broken connections
 - Silent failures
 - Real-world vehicle usage
@@ -183,82 +184,89 @@ It was shaped by:
 If your BLE solution “works most of the time” —  
 it is already broken.
 
-Why battery temperature was intentionally omitted
+---
+
+# Why Battery Temperature Was Intentionally Omitted
 
 During development, battery temperature values were investigated in detail.
+
 According to JBD protocol documentation, temperature sensors are typically encoded
-as Kelvin ×10, located at higher byte offsets in the Basic Info (0x03) response:
+as **Kelvin ×10**, located at higher byte offsets in the Basic Info (0x03) response.
+
+Temperature calculation:
 
 Temperature = (raw_value - 2731) / 10
-
 
 In theory, Liontron batteries with JBD-compatible BMS should expose one or more
 temperature sensors using this format.
 
-What was observed in practice
+---
+
+# What Was Observed in Practice
 
 When querying Liontron batteries via BLE, the following issues were consistently observed:
 
-The 0x03 Basic Info response often ends before the documented temperature offsets
-
-Bytes containing temperature data are frequently missing or zero-filled
-
-Different Liontron firmware versions return different frame lengths
-
-Temperature fields are not reliably populated, even while the battery is in use
-
-The Liontron mobile app may show temperatures that are not exposed via BLE
+- The 0x03 Basic Info response often ends before the documented temperature offsets
+- Bytes containing temperature data are frequently missing or zero-filled
+- Different Liontron firmware versions return different frame lengths
+- Temperature fields are not reliably populated, even while the battery is in use
+- The Liontron mobile app may show temperatures that are not exposed via BLE
 
 As a result, reading battery temperature via BLE produced values such as:
 
-Constant 0 °C
+- Constant 0 °C
+- Invalid negative temperatures
+- Unchanging values regardless of load or environment
 
-Invalid negative temperatures
+---
 
-Unchanging values regardless of load or environment
+# Why This Is a Problem
 
-Why this is a problem
+Battery temperature is a **safety-relevant parameter**.
 
-Battery temperature is a safety-relevant parameter.
 Displaying unreliable or guessed temperature values is worse than displaying none at all:
 
-False alarms may trigger unnecessary user actions
-
-Missing alarms may hide real thermal problems
-
-Inconsistent values reduce trust in the system
+- False alarms may trigger unnecessary user actions
+- Missing alarms may hide real thermal problems
+- Inconsistent values reduce trust in the system
 
 For a motorhome / camper environment, this risk is unacceptable.
 
-Design decision
+---
 
-Battery temperature was therefore intentionally omitted from:
+# Design Decision
 
-ESP32 JSON output
+Battery temperature was intentionally omitted from:
 
-Modbus registers
-
-HMI visualization
+- ESP32 JSON output
+- Modbus registers
+- HMI visualization
 
 This was a conscious design decision, not a technical limitation.
 
-What is used instead
+---
 
-Cell voltage delta is used as an early indicator for imbalance and stress
+# What Is Used Instead
 
-BMS protection and warning bits are monitored directly
+Instead of temperature monitoring, the system relies on:
 
-Raspberry Pi CPU temperature is monitored to protect the gateway hardware
+- Cell voltage delta as an early indicator for imbalance and stress
+- Direct monitoring of BMS protection and warning bits
+- Raspberry Pi CPU temperature monitoring to protect the gateway hardware
 
-The system relies on the internal BMS protections for thermal safety
+The system relies on the internal **BMS protections** for thermal safety.
 
-Conclusion
+---
+
+# Conclusion
 
 Although the JBD protocol technically supports temperature reporting,
-Liontron batteries do not expose this information reliably via BLE.
+Liontron batteries do **not expose this information reliably via BLE**.
 
 For long-term stability and safety, battery temperature was excluded by design.
 
-Reliability and correctness were prioritized over completeness.
+**Reliability and correctness were prioritized over completeness.**
+
+---
 
 _End of document_
